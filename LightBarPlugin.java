@@ -1,4 +1,4 @@
-package com.unity3d.player;
+package com.agili8.plugins;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -29,16 +29,25 @@ import java.nio.charset.StandardCharsets;
 
 
 
-public class MyUnityPlayerActivity extends Activity implements IUnityPlayerLifecycleEvents, SerialInputOutputManager.Listener
+public class LightBarPlugin extends Fragment implements IUnityPlayerLifecycleEvents, SerialInputOutputManager.Listener
 {
 	private static final int WRITE_WAIT_MILLIS = 2000;
     private static final int READ_WAIT_MILLIS = 2000;
-	private static final String INTENT_ACTION_GRANT_USB = "com.cvs.pinball.USB_PERMISSION";
+	private static final String INTENT_ACTION_GRANT_USB = "com.peterstulpner.vuforiatesting.USB_PERMISSION";
 		
     protected UnityPlayer mUnityPlayer; // don't change the name of this variable; referenced from native code
+    public static LightBarPlugin instance;
 	private SerialInputOutputManager ioManager;
 	private UsbSerialPort port=null;
 	
+    public static void start()
+    {
+        // Instantiate Fragment.
+        instance = new LightBarPlugin();
+        // Add to the current 'Activity' (a static reference is stored in 'UnityPlayer').
+        mUnityPlayer.currentActivity.getFragmentManager().beginTransaction().add(instance, "LightBarPlugin").commit();
+    }
+
     protected String updateUnityCommandLineArguments(String cmdLine)
     {
         return cmdLine;
@@ -69,12 +78,7 @@ public class MyUnityPlayerActivity extends Activity implements IUnityPlayerLifec
 		port.setBreak(true);
 		Thread.sleep(100);
 		port.setBreak(false);
-		
-		port.write(("LCDW1"+line2+"\n").getBytes(), WRITE_WAIT_MILLIS);
-		port.setBreak(true);
-		Thread.sleep(100);
-		port.setBreak(false);
-		}
+        }
 		catch (Exception e)
 		{
 			System.out.println("Exception Setting Colour on LightBar");
@@ -115,8 +119,8 @@ public class MyUnityPlayerActivity extends Activity implements IUnityPlayerLifec
 		System.out.println("Initializing USB Serial Manager");
         ioManager = new SerialInputOutputManager(port, this);
 		ioManager.start();
-		ClearLCD();
-		WriteLCD(" Initializing...", "                ");
+		LightBarOff();
+		
 	
 		}
 		catch(UnsupportedOperationException ignored) 

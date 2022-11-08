@@ -4,11 +4,11 @@ using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 
-public class UnityArduinoLCD : MonoBehaviour
+public class UnityAgili8Lightbarcontrol: MonoBehaviour
 {
     AndroidJavaClass unityPlayer=null;
     AndroidJavaObject activity=null;
-    private Thread lcdThread;
+    private Thread lightbarThread;
 
     void Start()
     {
@@ -24,10 +24,10 @@ public class UnityArduinoLCD : MonoBehaviour
         {
             Debug.Log("Exception writing to lcd from unity:" + e.Message);
         }
-        DirectClearLCD();
-        DirectWriteLCD("Line 1", "Line 2");
-        lcdThread = new Thread(ThreadExecution) { IsBackground = true, Priority = System.Threading.ThreadPriority.Normal, Name = "LCDThread" };
-        lcdThread.Start();
+        DirectLightBarOff();
+        DirectSetLightBarColour("0,0,0,0,0");
+        lightbarThread = new Thread(ThreadExecution) { IsBackground = true, Priority = System.Threading.ThreadPriority.Normal, Name = "lightbarThread" };
+        lightbarThread.Start();
     }
 	
 	private bool running = true;
@@ -40,36 +40,36 @@ public class UnityArduinoLCD : MonoBehaviour
     {
     }
 	
-    private string lastLine1 = null;
-    private string lastLine2 = null;
+    private string lastLine1 = null;   
     private void ThreadExecution()
     {
         AndroidJNI.AttachCurrentThread();
         while (running)
         {
-            if (LCDLine1 != null && LCDLine2 != null && (!LCDLine1.Equals(lastLine1) || !LCDLine2.Equals(lastLine2)))
+            if (LightbarLine1 != null && (!LightbarLine1.Equals(lastLine1)))
             {
-                DirectWriteLCD(LCDLine1, LCDLine2);
+                DirectSetLightBarColour(LightbarLine1);
+                lastLine1 = LightbarLine1;
             }
             Thread.Sleep(1000);
         }
     }
 
-    private string LCDLine1=null, LCDLine2= null;
-    public void WriteLCD(string line1, string line2)
+    private string LightbarLine1=null;
+    public void SetColour(string line1)
     {
-        LCDLine1 = line1;
-        LCDLine2 = line2;
+        LightbarLine1 = line1;
+        
     }
 
-    private int MAX_LINE_LENGTH = 16; //16x2 LCD
-    private string PrepareLCDLine(string line)
+    private int MAX_LINE_LENGTH = 18; //16x2 LCD
+    private string PrepareColourLine(string line)
     {
         if (line != null)
-        {
+        { 
             if (line.Length > MAX_LINE_LENGTH)
             {
-                line = line.Substring(0, 16);
+                line = line.Substring(0, 18);
             }
             else if (line.Length < MAX_LINE_LENGTH)
             {
@@ -82,7 +82,7 @@ public class UnityArduinoLCD : MonoBehaviour
         }
         return line;
     }
-    public void DirectWriteLCD(string line1, string line2)
+    public void DirectSetLightBarColour(string line1)
     {
         
         try
@@ -91,18 +91,18 @@ public class UnityArduinoLCD : MonoBehaviour
             {
                 if (activity != null)
                 {
-                    activity.Call("WriteLCD", new object[] { PrepareLCDLine(line1), PrepareLCDLine(line2) });
+                    activity.Call("SetLightBarColour", new object[] { line1 });
                 }
             }
         }
         catch (Exception e)
         {
-            Debug.Log("Exception writing to lcd from unity:" + e.Message);
+            Debug.Log("Exception setting Lightbar Colour from unity:" + e.Message);
         }
         
     }
 
-    private void DirectClearLCD()
+    private void DirectLightBarOff()
     {
         try
         {
@@ -110,13 +110,13 @@ public class UnityArduinoLCD : MonoBehaviour
             {
                 if (activity != null)
                 {
-                    activity.Call("ClearLCD", new object[] { });
+                    activity.Call("LightBarOff", new object[] { });
                 }
             }
         }
         catch (Exception e)
         {
-            Debug.Log("Exception writing to lcd from unity:" + e.Message);
+            Debug.Log("Exception turning LightBar Off from unity:" + e.Message);
         }
     }
 }
